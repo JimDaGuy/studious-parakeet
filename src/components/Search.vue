@@ -36,6 +36,11 @@
       >Enter a value to search. (3 characters minimum)</div>
       <div v-if="recipes.length < 1 && searchTerm.length >= 3">No results found for {{searchTerm}}.</div>
     </div>
+    <div class="pagination-container">
+      <span class="page-num" v-if="recipes.length !== 0 || pageNum !== 1">Page: {{pageNum}}</span>
+      <ui-button class="prev-page" @click="changePage(false)" v-if="pageNum > 1">Previous Page</ui-button>
+      <ui-button class="next-page" @click="changePage(true)" v-if="recipes.length === 5">Next Page</ui-button>
+    </div>
     <ui-modal ref="beerInfoModal" title="Beer Info">
       <span class="beer-info-name">
         <b>Name:</b>
@@ -106,7 +111,6 @@ export default {
         .then(response => {
           const comments = response.data;
           this.comments = comments;
-          console.dir(comments);
         })
         .catch(error => {
           console.dir(error);
@@ -129,10 +133,7 @@ export default {
 
       this.$http
         .post(apiURL + query)
-        .then(response => {
-          const data = response.data;
-          console.dir(data);
-
+        .then(() => {
           let query2 = `comments?beerID=${beerID}`;
           query2 = encodeURI(query2);
 
@@ -141,7 +142,6 @@ export default {
             .then(response2 => {
               const comments = response2.data;
               this.comments = comments;
-              console.dir(comments);
             })
             .catch(error2 => {
               console.dir(error2);
@@ -154,6 +154,9 @@ export default {
       this.currentComment = "";
     },
     performSearch() {
+      // Reset page num
+      this.pageNum = 1;
+
       const apiURL = this.apiURL;
       const search = this.searchTerm;
       const pageNum = this.pageNum;
@@ -169,7 +172,33 @@ export default {
           .then(response => {
             const results = response.data;
             this.recipes = results;
-            console.dir(response.data[0]);
+          })
+          .catch(error => {
+            console.dir(error);
+          });
+      }
+    },
+    changePage(positive) {
+      if (positive) this.pageNum++;
+      else this.pageNum--;
+
+      if (this.pageNum < 1) this.pageNum = 1;
+
+      const apiURL = this.apiURL;
+      const search = this.searchTerm;
+      const pageNum = this.pageNum;
+      const numResults = this.numResults;
+
+      // Only search terms longer than three characters
+      if (search.length >= 3) {
+        let query = `findRecipeByName?name=${search}&rpp=${numResults}&page=${pageNum}`;
+        query = encodeURI(query);
+
+        this.$http
+          .get(apiURL + query)
+          .then(response => {
+            const results = response.data;
+            this.recipes = results;
           })
           .catch(error => {
             console.dir(error);
@@ -265,6 +294,28 @@ export default {
   height: 100%;
   background-color: white;
   border-radius: 50%;
+}
+
+.pagination-container {
+  width: 100%;
+  display: flex;
+  align-content: center;
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.page-num {
+  width: 100%;
+  text-align: center;
+}
+
+.prev-page {
+  margin: 10px auto;
+}
+
+.next-page {
+  margin: 10px auto;
 }
 
 [class^="beer-info"] {
