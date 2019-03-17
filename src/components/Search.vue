@@ -11,6 +11,7 @@
         placeholder="Beer Name..."
       >
     </div>
+    <div v-if="recipes.length >= 1 && searchTerm.length >= 3">Showing results for {{searchTerm}}</div>
     <div class="results-wrapper">
       <div class="result" v-for="recipe in recipes" v-bind:key="recipe.BeerID">
         <div class="result-info-container">
@@ -22,7 +23,7 @@
             <b>Style:</b>
             {{recipe.Style}}
           </span>
-          <ui-button class="result-button">More Info & Comments</ui-button>
+          <ui-button class="result-button" @click="showBeerInfo(recipe)">More Info & Comments</ui-button>
         </div>
         <div class="result-image-container">
           <a :href="externalURL + recipe.URL" target="_blank" class="result-link">
@@ -35,8 +36,49 @@
       >Enter a value to search. (3 characters minimum)</div>
       <div v-if="recipes.length < 1 && searchTerm.length >= 3">No results found for {{searchTerm}}.</div>
     </div>
-    <ui-button @click="openModal('modal1')">Basic Modal</ui-button>
-    <ui-modal ref="modal1" title="Basic Modal">Hi World~~~{{searchTerm}}</ui-modal>
+    <ui-modal ref="beerInfoModal" title="Beer Info">
+      <span class="beer-info-name">
+        <b>Name:</b>
+        {{selectedRecipe.Name || ''}}
+      </span>
+      <span class="beer-info-style">
+        <b>Style:</b>
+        {{selectedRecipe.Style || ''}}
+      </span>
+      <span class="beer-info-original-grav">
+        <b>Original Gravity:</b>
+        {{selectedRecipe.OG || ''}}
+      </span>
+      <span class="beer-info-final-grav">
+        <b>Final Gravity:</b>
+        {{selectedRecipe.FG || ''}}
+      </span>
+      <span class="beer-info-abv">
+        <b>ABV:</b>
+        {{selectedRecipe.ABV || ''}}
+      </span>
+      <span class="beer-info-ibu">
+        <b>IBU:</b>
+        {{selectedRecipe.IBU || ''}}
+      </span>
+      <span class="beer-info-color">
+        <b>Color:</b>
+        {{selectedRecipe.Color || ''}}
+      </span>
+      <a :href="externalURL + selectedRecipe.URL" target="_blank">
+        <span class="beer-info-external">External URL</span>
+      </a>
+      <img class="result-image" :src="this.imageURL + selectedRecipe.Color">
+      <div class="comments-container">
+        <h2 class="comment-header">Comments</h2>
+        <div class="comment-container" v-for="comment in comments" v-bind:key="comment._id">
+          <span class="comment-span">{{comment.comment}}</span>
+        </div>
+        <div v-if="comments.length < 1">No comments found for this beer. You can leave the first!</div>
+        <input class="comment-input" type="text" v-model="currentComment" placeholder="Comment...">
+        <ui-button @click="submitComment">Submit</ui-button>
+      </div>
+    </ui-modal>
   </div>
 </template>
 
@@ -46,6 +88,70 @@ export default {
   methods: {
     openModal(ref) {
       this.$refs[ref].open();
+    },
+    showBeerInfo(recipe) {
+      // Clear previous comments
+      this.comments = [];
+      // Update selected recipe for modal view
+      this.selectedRecipe = recipe;
+
+      // Get Comments
+      const apiURL = this.apiURL;
+
+      let query = `comments?beerID=${recipe.BeerID}`;
+      query = encodeURI(query);
+
+      this.$http
+        .get(apiURL + query)
+        .then(response => {
+          const comments = response.data;
+          this.comments = comments;
+          console.dir(comments);
+        })
+        .catch(error => {
+          console.dir(error);
+        });
+
+      // Show modal
+      this.$refs["beerInfoModal"].open();
+    },
+    submitComment() {
+      const beerID = this.selectedRecipe.BeerID;
+      const comment = this.currentComment;
+
+      if (comment.length < 1) return;
+
+      // Send Comment
+      const apiURL = this.apiURL;
+
+      let query = `comment?beerID=${beerID}&comment=${comment}`;
+      query = encodeURI(query);
+
+      this.$http
+        .post(apiURL + query)
+        .then(response => {
+          const data = response.data;
+          console.dir(data);
+
+          let query2 = `comments?beerID=${beerID}`;
+          query2 = encodeURI(query2);
+
+          this.$http
+            .get(apiURL + query2)
+            .then(response2 => {
+              const comments = response2.data;
+              this.comments = comments;
+              console.dir(comments);
+            })
+            .catch(error2 => {
+              console.dir(error2);
+            });
+        })
+        .catch(error => {
+          console.dir(error);
+        });
+
+      this.currentComment = "";
     },
     performSearch() {
       const apiURL = this.apiURL;
@@ -77,9 +183,13 @@ export default {
       imageURL: "https://beerdbapi.herokuapp.com/image?color=",
       externalURL: "https://www.brewersfriend.com",
       searchTerm: "",
+      currentBeerID: "",
+      currentComment: "",
       pageNum: 1,
       numResults: 5,
-      recipes: []
+      selectedRecipe: {},
+      recipes: [],
+      comments: []
     };
   },
   components: {}
@@ -118,6 +228,7 @@ export default {
   border: 1px solid black;
   display: flex;
   align-items: flex-start;
+  background-color: lightgray;
 }
 
 .result-info-container {
@@ -152,5 +263,32 @@ export default {
 .result-image {
   width: 100%;
   height: 100%;
+  background-color: white;
+  border-radius: 50%;
+}
+
+[class^="beer-info"] {
+  float: left;
+  clear: left;
+  width: 70%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  text-align: left;
+}
+
+.comments-container {
+}
+
+.comment-container {
+  height: 20px;
+  border: 1px solid gray;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.comment-span {
+  font-weight: 700;
 }
 </style>
