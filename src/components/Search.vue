@@ -1,6 +1,6 @@
 <template>
   <div id="search">
-    <h1>BeerDB App</h1>
+    <h1 class="app-title">BeerDB</h1>
     <div class="search-wrapper">
       <label class="search-label">Search Beer Recipes</label>
       <input
@@ -226,6 +226,15 @@ export default {
 </script>
 
 <style>
+@import url("https://fonts.googleapis.com/css?family=Pacifico");
+
+.app-title {
+  font-family: "Pacifico", cursive;
+  color: rgb(200, 143, 67);
+  font-size: 55px;
+  text-decoration: underline;
+}
+
 .search-wrapper {
   width: 100%;
   overflow: auto;
