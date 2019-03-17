@@ -1,14 +1,11 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-    <ui-button @click="openModal('modal1')">Basic Modal</ui-button>
-    <ui-modal ref="modal1" title="Basic Modal">Hi World~~~</ui-modal>
+    <Search/>
   </div>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
+import Search from "./components/Search.vue";
 
 export default {
   name: "app",
@@ -18,7 +15,7 @@ export default {
     }
   },
   components: {
-    HelloWorld
+    Search
   }
 };
 </script>
@@ -41,5 +38,9 @@ export default {
 
 html {
   font-size: 100%;
+}
+
+body {
+  min-width: 350px;
 }
 </style>
